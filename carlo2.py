@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 import multiprocessing as mp
-from functools import partial
+from time import time
 
 rng = np.random.default_rng()
 
@@ -47,18 +47,19 @@ def fillDfOneIteration(i):
     return newScore, newScore.rank(ascending = False), newFirstPlace
 
 if __name__ == "__main__":
+    startTime = time()
     with mp.Pool(processes = 8) as p:
         mp.freeze_support()
 
-        iterations = 500000
+        iterations = 750000
 
         parallelResults = p.map(fillDfOneIteration, range(iterations), chunksize = 100)
 
         scores = pd.DataFrame(data = [x[0] for x in parallelResults]).transpose()
-        # print(scores)
+        print(scores)
 
         ranks = pd.DataFrame(data = [x[1] for x in parallelResults]).transpose()
-        # print(ranks)
+        print(ranks)
 
         firstPlaces = pd.DataFrame(data = [x[2] for x in parallelResults])
 
@@ -72,3 +73,7 @@ if __name__ == "__main__":
         ranks.to_pickle("ranks.pkl")
         scores.to_pickle("scores.pkl")
         firstPlaceHistories.to_pickle("firstPlace.pkl")
+
+    print("Total duration:", time() - startTime)
+
+    
