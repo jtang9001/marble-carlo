@@ -37,21 +37,23 @@ def fillDfOneIteration(i):
     newScore = filledDf.sum(axis=1)
 
     newFirstPlace = list(range(numColsFilled + 1))
+    newPodium = list(range(numColsFilled + 1))
     for colToIgnore in range(numColsFilled, -1, -1):
         rng.shuffle(poss_scores)
         filledDf.iloc[:, colToIgnore] = poss_scores
         scoresTemp = filledDf.sum(axis=1)
         bestTeam = scoresTemp.idxmax()
         newFirstPlace[colToIgnore] = bestTeam
+        newPodium[colToIgnore] = scoresTemp.nlargest(n=3, keep = "first").index
 
-    return newScore, newScore.rank(ascending = False), newFirstPlace
+    return newScore, newScore.rank(ascending = False), newFirstPlace, newPodium
 
 if __name__ == "__main__":
     startTime = time()
     with mp.Pool(processes = 8) as p:
         mp.freeze_support()
 
-        iterations = 750000
+        iterations = 500000
 
         parallelResults = p.map(fillDfOneIteration, range(iterations), chunksize = 100)
 
@@ -62,17 +64,30 @@ if __name__ == "__main__":
         print(ranks)
 
         firstPlaces = pd.DataFrame(data = [x[2] for x in parallelResults])
+        print(firstPlaces)
+
+        podiumFinishes = pd.DataFrame(data = [x[3] for x in parallelResults])
+        podiumFinishes = podiumFinishes.apply(pd.Series.explode)
+        print(podiumFinishes)
 
         firstPlaceHistories = pd.DataFrame(index = df.index)
         for eventNum, col in firstPlaces.iteritems():
             firstPlaceHistories[eventNum] = col.value_counts(normalize = True)
 
+        podiumHistories = pd.DataFrame(index = df.index)
+        for eventNum, col in podiumFinishes.iteritems():
+            podiumHistories[eventNum] = col.value_counts(normalize = True)*(3)
+
         firstPlaceHistories = firstPlaceHistories.fillna(0)
         print(firstPlaceHistories)
+
+        podiumHistories = podiumHistories.fillna(0)
+        print(podiumHistories)
 
         ranks.to_pickle("ranks.pkl")
         scores.to_pickle("scores.pkl")
         firstPlaceHistories.to_pickle("firstPlace.pkl")
+        podiumHistories.to_pickle("podium.pkl")
 
     print("Total duration:", time() - startTime)
 
