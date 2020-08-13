@@ -53,7 +53,7 @@ if __name__ == "__main__":
     with mp.Pool(processes = 8) as p:
         mp.freeze_support()
 
-        iterations = 500000
+        iterations = 800000
 
         parallelResults = p.map(fillDfOneIteration, range(iterations), chunksize = 100)
 
